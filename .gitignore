@@ -1,2 +1,5 @@
 odagent/.env
 .venv/
+web/node_modules/
+odagent/output/
+odagent/src/odagent/__pycache__/
