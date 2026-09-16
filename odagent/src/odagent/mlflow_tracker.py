@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import mlflow
-from mlflow.entities import Metric
+from mlflow.entities import Metric, ViewType
 
 # 项目根目录（odagent/odagent）
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -52,8 +52,15 @@ def start_run(run_id: str, agent_name: str, role: str, requirement: str = "") ->
     """为单个 Agent 启动一个 MLflow run，返回 mlflow run_id。
 
     使用 run_name 便于在 UI 中区分（如 "需求分析师"）。
+    注意：MLflow 同一时刻只允许一个 active run，因此在启动新 run 前
+    必须先结束上一个 active run，否则后续 Agent 的记录会失败。
     """
     exp_id = _ensure_experiment()
+    # 结束上一个 active run，避免 "Run ... is already active" 错误
+    try:
+        mlflow.end_run()
+    except Exception:
+        pass
     run = mlflow.start_run(
         experiment_id=exp_id,
         run_name=f"{role or agent_name}",
@@ -127,6 +134,9 @@ def list_runs(limit: int = 50) -> list[dict[str, Any]]:
         experiment_ids=[exp_id],
         order_by=["start_time DESC"],
         max_results=limit,
+        # 默认只返回 active 的 run；历史 run 可能被标记为 deleted，
+        # 用 ViewType.ALL 才能取回全部历史数据供前端展示。
+        run_view_type=ViewType.ALL,
     )
     result: list[dict[str, Any]] = []
     for _, row in runs.iterrows():

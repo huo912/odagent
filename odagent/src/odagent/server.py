@@ -24,6 +24,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from odagent.crew import ODAgentCrew
 from odagent.docx_parser import extract_text
 from odagent.checkpoint import get_checkpoint_manager
+from odagent.document_writer import ensure_all_documents_on_disk
 from odagent.memory import get_memory_store
 from odagent.mlflow_tracker import list_runs, log_agent_snapshot
 from odagent.project_writer import write_project
@@ -146,6 +147,11 @@ def _run_crew(
 
         # 将每个 Agent 的执行指标记录到 MLflow
         _record_mlflow(requirement, run_id)
+
+        # 文档落盘保障：确保所有 Agent 的文档正文真正写到磁盘
+        # （Agent 可能把正文存到记忆而只输出过程确认，这里做兜底重组）
+        landed = ensure_all_documents_on_disk()
+        print(f"文档落盘保障完成: {landed}")
 
         # 工程落地：全栈代码 + 测试代码
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)

@@ -9,7 +9,7 @@ agent:
     能把测试目标转化为具体、可复现、可追踪的测试用例与验收标准。
   reasoning: true
   max_reasoning_attempts: 3
-  max_iter: 8
+  max_iter: 12
   allow_delegation: false
   verbose: true
 task:
@@ -20,27 +20,44 @@ task:
     异常、性能和兼容性。为每条关键用例给出前置条件、步骤、测试数据、预期结果和优先级，
     并明确自动化测试代码、测试夹具、执行命令和缺陷判定标准。
 
-    自动化测试必须使用 Playwright 实现端到端（E2E）测试，具体要求：
-    - 使用 Python 版 Playwright（pytest + playwright），或 Node.js 版 Playwright（@playwright/test），
-      二选一并在文档中说明。
-    - 每个测试文件必须用代码块标注其相对路径（如 ```python\n# tests/e2e/test_login.py\n```），
+    必须交付一个独立、可直接运行的测试工程（tests/），包含：
+    - package.json（含 @playwright/test 依赖与 scripts，如 "test": "playwright test"）；
+    - playwright.config.ts（测试配置）；
+    - tests/fixtures/（测试夹具与数据准备）；
+    - tests/e2e/（端到端测试用例，覆盖登录、增删改查、关键业务流程）；
+    - 每个测试文件必须用代码块标注其相对路径（如 ```js\n// tests/e2e/login.spec.js\n```），
+      以便后续自动落地为工程目录。
+
+    自动化测试必须使用 Node.js 版 Playwright（@playwright/test）实现端到端（E2E）测试，具体要求：
+    - 每个测试文件必须用代码块标注其相对路径（如 ```js\n// tests/e2e/login.spec.js\n```），
       以便后续自动落地为工程目录。
     - 测试代码必须覆盖核心用户流程（登录、增删改查、关键业务操作等），
       包含必要的断言、等待策略和测试数据准备。
-    - 提供 playwright 配置文件（playwright.config.ts 或 conftest.py）、
-      依赖安装命令（pip install playwright / npm install @playwright/test）和运行命令。
+    - 必须提供 package.json（含依赖与 scripts）、playwright.config.ts 和运行命令，
+      使测试工程可直接 npm install 后运行。
+
+    重要输出约束：
+    - 必须输出完整的测试工程代码（package.json、playwright.config.ts、fixtures、e2e 用例），
+      不要只输出测试用例文字描述而遗漏可运行的测试代码。
+    - 直接输出测试用例文档的完整正文内容（含所有测试代码块），不要输出任何 shell 命令、cat/echo 拼接命令、
+      伪代码、占位符或"将内容写入文件"之类的操作说明。
+    - 不要使用 `save_memory` 工具代替正文输出，也不要输出"已保存记忆""执行确认"等过程性说明；
+      完整文档正文必须作为本任务的最终输出直接返回，以便系统自动落盘到 output/software_test_plan.md 并落地为工程。
+    - 不要使用 `cat xxx >> file`、`$FINAL`、`EOF` 等命令式写法，也不要引用 /app 等路径。
+    - 所有测试代码文件必须直接以 Markdown 代码块形式呈现（代码块首行标注相对路径），禁止用命令或注释代替实际内容。
   expected_output: >
-    一份中文 Markdown 测试用例文档，至少包含：
+    一份中文 Markdown 测试用例文档，必须包含一个可直接运行的测试工程（tests/）：
     1. PRD 需求到测试用例的追踪矩阵；
     2. 代码模块和测试范围；
     3. 正常流程、边界、异常和权限测试用例；
     4. API、数据库和端到端测试用例；
     5. 性能、安全、可靠性和兼容性测试用例；
-    6. 自动化测试代码、目录和执行命令（必须包含 Playwright E2E 测试代码，
-       每个文件用代码块标注相对路径，如 tests/e2e/xxx.py 或 tests/e2e/xxx.spec.ts）；
+    6. 自动化测试工程代码（必须包含 package.json、playwright.config.ts、tests/fixtures/、
+       tests/e2e/ 测试用例，每个文件用代码块标注相对路径，如 tests/e2e/login.spec.js）；
     7. 测试数据、环境和依赖；
     8. 缺陷分级、回归范围和发布准入标准。
     每条关键用例必须包含场景、前置条件、步骤、测试数据、预期结果和优先级，不能只列测试类型名称。
+    直接输出完整文档正文，不要输出 shell 命令、伪代码或"已保存记忆"等过程性说明。
   agent: senior_software_test_engineer
   context:
     - analyze_requirement

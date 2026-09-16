@@ -25,6 +25,19 @@ MEMORY_DIR = Path(__file__).resolve().parents[2] / "output" / "memory"
 MAX_CONTEXT_MEMORIES = 20
 
 
+def _escape_braces(text: str) -> str:
+    """转义文本中的花括号，避免被 CrewAI 模板引擎当作变量占位符。
+
+    CrewAI 的 interpolate_only 使用正则 ``\\{([A-Za-z_][A-Za-z0-9_\\-]*)}`` 匹配
+    模板变量（如 ``{resource}``）。若记忆内容包含此类文本，会抛出
+    "Template variable 'xxx' not found in inputs dictionary" 错误。
+
+    注意：不能简单替换为 ``{{``，因为该正则仍能从 ``{{xxx}}`` 中匹配到 ``{xxx}``。
+    因此这里将半角花括号替换为全角花括号（｛｝），既保留可读性，又不会被正则匹配。
+    """
+    return text.replace("{", "｛").replace("}", "｝")
+
+
 class MemoryStore:
     """线程安全的记忆存储，按 Agent 持久化到 JSON 文件。"""
 
@@ -123,7 +136,13 @@ class MemoryStore:
         lines = ["【历史记忆】以下是你在之前任务中积累的经验与决策，请参考："]
         for m in recent:
             ts = time.strftime("%Y-%m-%d %H:%M", time.localtime(m.get("timestamp", 0)))
-            lines.append(f"- [{m.get('key', '')}] ({ts}) {m.get('content', '')}")
+            # 转义花括号，避免记忆内容中的 {xxx} 被 CrewAI 的模板引擎
+            # （interpolate_only 正则 \{([A-Za-z_][A-Za-z0-9_\-]*)}）误当作模板变量
+            # （如 {resource}）而抛出 "Template variable 'xxx' not found in inputs dictionary" 错误。
+            # 注意：不能简单替换为 {{，因为该正则仍能从 {{xxx}} 中匹配到 {xxx}，
+            # 必须使用不会被正则匹配的全角花括号。
+            content = _escape_braces(m.get("content", ""))
+            lines.append(f"- [{m.get('key', '')}] ({ts}) {content}")
         return "\n".join(lines)
 
 
@@ -161,8 +180,10 @@ def get_memory_tools(agent_key: str) -> list[Any]:
         results = store.search(agent_key, query)
         if not results:
             return "未找到相关记忆。"
+        # 转义花括号，避免记忆内容中的 {xxx} 被模板引擎误当作变量
         return "\n".join(
-            f"- [{m.get('key', '')}] {m.get('content', '')}" for m in results
+            f"- [{m.get('key', '')}] {_escape_braces(m.get('content', ''))}"
+            for m in results
         )
 
     return [save_memory, retrieve_memory]

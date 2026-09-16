@@ -62,15 +62,16 @@ def _find_path_in_block(lang: str, body: str) -> str | None:
     if not lines:
         return None
     first = lines[0].strip()
-    # 支持 // path: xxx 或 # path: xxx 或 <!-- path: xxx -->
+    # 支持 // path: xxx 或 # path: xxx 或 <!-- path: xxx --> 或 /* path: xxx */
     path_match = re.search(
         r"(?:path|file|文件)\s*[:：]\s*([^\s]+)", first, re.IGNORECASE
     )
     if path_match:
         return path_match.group(1).strip("`\"'<>")
     # 支持首行直接是路径，如 // src/main/java/... 或 # src/main/java/... 或 -- sql/xxx.sql
+    # 或 /* tests/xxx.js */（块注释）
     direct = re.match(
-        r"^(?://|#|--|<!--|/\*)\s*([\w./\\-]+\.\w+)\s*(?:-->)?$", first
+        r"^(?://|#|--|<!--|/\*)\s*([\w./\\-]+\.\w+)\s*(?:-->|\*/)?$", first
     )
     if direct:
         return direct.group(1).strip()
@@ -130,7 +131,8 @@ def write_project(markdown: str, output_root: str | Path) -> dict[str, int]:
         if not safe or safe in written:
             continue
         category = _classify(safe)
-        target = root / category / safe
+        rel = _rel_to_category(safe, category)
+        target = root / category / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         # 去除代码块首行的路径标注注释
         cleaned = _strip_path_annotation(content)
@@ -149,6 +151,40 @@ def _strip_path_annotation(content: str) -> str:
     first = lines[0].strip()
     if re.search(r"(?:path|file|文件)\s*[:：]", first, re.IGNORECASE):
         return "\n".join(lines[1:]).lstrip("\n")
-    if re.match(r"^(?://|#|<!--|/\*)\s*[\w./\\-]+\.\w+\s*(?:-->)?$", first):
+    if re.match(r"^(?://|#|<!--|/\*)\s*[\w./\\-]+\.\w+\s*(?:-->|\*/)?$", first):
         return "\n".join(lines[1:]).lstrip("\n")
     return content
+
+
+# 各分类目录的路径前缀（用于去除重复嵌套）
+_CATEGORY_PREFIXES = {
+    "backend": ("backend/",),
+    "frontend": ("frontend/", "web/"),
+    "test": ("test/", "tests/", "e2e/"),
+    "sql": ("sql/",),
+}
+
+
+def _rel_to_category(path: str, category: str) -> str:
+    """将路径转换为相对分类目录的路径，去除已包含的分类前缀。
+
+    例如：
+      backend/src/main/java/...  + backend -> src/main/java/...
+      backend/pom.xml           + backend -> pom.xml
+      frontend/src/App.vue      + frontend -> src/App.vue
+      tests/e2e/login.spec.js   + test     -> e2e/login.spec.js
+      backend/sql/init.sql      + sql      -> init.sql
+    """
+    p = path
+    for prefix in _CATEGORY_PREFIXES.get(category, ()):
+        if p.startswith(prefix):
+            p = p[len(prefix):]
+            break
+    # sql 特殊处理：backend/sql/init.sql -> 去掉 backend/ 后仍含 sql/，再去掉
+    if category == "sql":
+        # 去掉可能存在的 backend/ 前缀
+        if p.startswith("backend/"):
+            p = p[len("backend/"):]
+        if p.startswith("sql/"):
+            p = p[len("sql/"):]
+    return p

@@ -25,6 +25,14 @@ task:
     - 后端：Java 17 + Spring Boot 3.x + Spring Web + Spring Data JPA/MyBatis-Plus + MySQL；
     - 数据库：MySQL 8.x；
     - 架构风格：前后端分离的 B/S 架构，RESTful API。
+
+    重要输出约束：
+    - 直接输出软件架构设计文档的完整正文内容，不要输出任何 shell 命令、cat/echo 拼接命令、
+      伪代码、占位符或"将内容写入文件"之类的操作说明。
+    - 不要使用 `save_memory` 工具代替正文输出，也不要输出"已保存记忆""执行确认"等过程性说明；
+      完整文档正文必须作为本任务的最终输出直接返回，以便系统自动落盘到 output/software_architecture.md。
+    - 不要使用 `cat xxx >> file`、`$FINAL`、`EOF` 等命令式写法，也不要引用 /app 等路径。
+    - 所有章节内容必须直接以 Markdown 正文形式呈现，禁止用命令或注释代替实际内容。
   expected_output: >
     一份中文 Markdown 软件架构设计文档，至少包含：
     1. 架构目标、范围与约束；
@@ -38,6 +46,7 @@ task:
     9. 部署和实施路线；
     10. 架构风险与待确认问题。
     文档应明确区分已知事实、设计假设和需要验证的决策，避免没有依据的技术堆砌。
+    直接输出完整文档正文，不要输出 shell 命令、伪代码或"已保存记忆"等过程性说明。
   agent: software_architect
   context:
     - analyze_requirement

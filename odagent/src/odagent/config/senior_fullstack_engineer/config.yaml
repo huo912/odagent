@@ -9,7 +9,7 @@ agent:
     善于把复杂设计拆解为清晰的开发步骤、模块责任和验收结果。
   reasoning: true
   max_reasoning_attempts: 3
-  max_iter: 8
+  max_iter: 20
   allow_delegation: false
   verbose: true
 task:
@@ -17,29 +17,42 @@ task:
   description: >
     读取需求分析、软件架构设计和数据库设计的全部输出，直接实现完整的全栈软件代码。
 
-    技术栈必须严格遵循以下约定：
-    - 后端：Java 17 + Spring Boot 3.x + Spring Web + Spring Data JPA/MyBatis-Plus + MySQL，
-      使用 Maven 构建，遵循分层架构（controller/service/mapper/entity/dto）。
-    - 前端：Vue 3 + Vite + Element Plus + Vue Router + Pinia + Axios，
-      使用 <script setup> 组合式 API，页面组件放在 src/views，公共组件放 src/components。
-    - 数据库：MySQL 8.x，提供完整的建表 SQL 脚本（含表结构、索引、初始化数据）。
-    - 每个代码文件必须用代码块标注其相对路径（如 ```java\n// src/main/java/...\n```），
-      以便后续自动落地为工程目录。
+    必须交付三个独立、可直接运行的工程，缺一不可：
+    - 后端工程（backend/）：Java 17 + Spring Boot 3.x + Spring Web + MyBatis-Plus + MySQL，
+      使用 Maven 构建，遵循分层架构（controller/service/mapper/entity/dto），
+      必须包含 pom.xml、application.yml、启动类、实体、Mapper、Service、Controller、DTO、异常处理与配置类。
+    - 前端工程（frontend/）：Vue 3 + Vite + Element Plus + Vue Router + Pinia + Axios，
+      使用 <script setup> 组合式 API，页面组件放在 src/views，公共组件放 src/components，
+      必须包含 package.json、vite.config.js、index.html、src/main.js、src/App.vue、router、stores、api、utils、layouts 与全部页面。
+    - 数据库脚本（sql/）：MySQL 8.x 完整建表 SQL（含表结构、索引、初始化数据）。
+
+    每个代码文件必须用代码块标注其相对路径（如 ```java\n// backend/src/main/java/...\n```），
+    以便后续自动落地为工程目录。前端文件用 ```vue / ```js / ```json 标注（如 // frontend/src/App.vue）。
 
     按前置设计确定前端页面与交互、后端服务与 API、数据访问层、数据库迁移、配置管理和基础设施代码。
     代码必须包含必要的输入校验、错误处理、权限控制、日志与可观测性，并遵循既定的模块边界和接口契约。
     输出可直接保存到项目中的文件路径、完整代码内容、运行说明和已知限制；不要只输出设计方案或伪代码。
+
+    重要输出约束：
+    - 必须同时输出后端工程与前端工程的全部代码，二者缺一不可；不要只输出后端而遗漏前端。
+    - 直接输出全栈代码交付物的完整正文内容（含所有代码块），不要输出任何 shell 命令、cat/echo 拼接命令、
+      伪代码、占位符或"将内容写入文件"之类的操作说明。
+    - 不要使用 `save_memory` 工具代替正文输出，也不要输出"已保存记忆""执行确认"等过程性说明；
+      完整代码正文必须作为本任务的最终输出直接返回，以便系统自动落盘到 output/fullstack_code.md 并落地为工程。
+    - 不要使用 `cat xxx >> file`、`$FINAL`、`EOF` 等命令式写法，也不要引用 /app 等路径。
+    - 所有代码文件必须直接以 Markdown 代码块形式呈现（代码块首行标注相对路径），禁止用命令或注释代替实际内容。
   expected_output: >
-    一份中文 Markdown 全栈软件代码交付物，至少包含：
+    一份中文 Markdown 全栈软件代码交付物，必须同时包含以下三个工程：
     1. 项目文件树和技术基线（Vue3 + Spring Boot + Element Plus）；
-    2. 前端页面、组件、状态管理和交互代码；
-    3. 后端服务、API、领域逻辑和权限代码；
+    2. 前端工程（frontend/）：页面、组件、状态管理、路由、API 封装和交互代码，必须完整；
+    3. 后端工程（backend/）：服务、API、领域逻辑、权限、数据访问代码，必须完整；
     4. 数据库访问、迁移和数据一致性代码；
-    5. 完整的 MySQL 建表 SQL 脚本（单独代码块，标注 .sql 路径）；
+    5. 完整的 MySQL 建表 SQL 脚本（单独代码块，标注 sql/ 路径）；
     6. 每个文件的相对路径和完整内容（代码块首行标注路径）；
     7. 本地运行、构建和部署命令；
     8. 实现假设、已知限制和未实现事项。
     所有核心代码必须具体、完整且可运行，禁止用“此处省略”或伪代码代替。
+    直接输出完整代码正文，不要输出 shell 命令、伪代码或"已保存记忆"等过程性说明。
   agent: senior_fullstack_engineer
   context:
     - analyze_requirement

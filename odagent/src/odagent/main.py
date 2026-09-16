@@ -25,6 +25,7 @@ if __package__ in (None, ""):
 
 from odagent.crew import ODAgentCrew
 from odagent.docx_parser import extract_text
+from odagent.document_writer import ensure_all_documents_on_disk
 from odagent.project_writer import write_project
 from odagent.tracker import get_tracker
 
@@ -77,6 +78,10 @@ def run() -> None:
 
     elapsed_seconds = time.monotonic() - started_at
     print(f"\nCrew 结束，总耗时 {elapsed_seconds:.1f} 秒。")
+
+    # 文档落盘保障：确保所有 Agent 的文档正文真正写到磁盘
+    landed = ensure_all_documents_on_disk()
+    print(f"文档落盘保障完成: {landed}")
 
     # 工程落地
     output_root = Path(args.output)

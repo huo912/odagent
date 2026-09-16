@@ -1,0 +1,6 @@
+gua-frontend-develop@v1.0.5
+business-architecture-metrics@v0.7.2
+solution_architecture_assessment_v0.7.0@v0.7.0
+openspec-sdd-ddd@v1.0.1
+ba-document-generator@v0.2.1
+copilot-cli-insights@v1.0.0
